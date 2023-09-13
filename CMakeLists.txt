@@ -17,7 +17,4 @@ ENDIF()
 EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c "from sys import stdout; import sysconfig; stdout.write(sysconfig.get_path('purelib'))" OUTPUT_VARIABLE PYTHON_INSTALL_DIR)
 MESSAGE(STATUS "Python install dir is ${PYTHON_INSTALL_DIR}")
 
-SET (SYSCONFDIR /etc)
-
-ADD_SUBDIRECTORY (etc)
 ADD_SUBDIRECTORY (plugins)

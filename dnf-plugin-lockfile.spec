@@ -9,8 +9,7 @@ Summary:        DNF plugin for Performance Metrics
 License:        GPLv2
 BuildArch:      noarch
 URL:            https://github.com/ralphbean/dnf-plugin-lockfile
-#Source0:        %{url}/archive/v%{version}/dnf-plugin-%{srcname}-%{version}.tar.gz
-Source0:        %{url}/archive/refs/heads/main.tar.gz
+Source0:        %{url}/archive/v%{version}/dnf-plugin-%{srcname}-%{version}.tar.gz
 
 BuildRequires:  cmake
 BuildRequires:  python3-devel
@@ -32,15 +31,12 @@ Requires:       python3-dnf
 
 %install
 %cmake_install
-install -Ddpm0755 %{buildroot}%{_localstatedir}/log/dnf/lockfile
 
 %files -n       python3-%{name}
-%license COPYING
+%license LICENSE
 %doc README.md
-%{python3_sitelib}/dnf-plugin/%{srcname}.py
-%{python3_sitelib}/dnf-plugin/__pycache__/*
-%config(noreplace) %{_sysconfdir}/dnf/plugin/%{srcname}.conf
-%dir %{_localstatedir}/log/dnf/lockfile
+%{python3_sitelib}/dnf-plugins/%{srcname}.py
+%{python3_sitelib}/dnf-plugins/__pycache__/*
 
 %changelog
 %autochangelog
