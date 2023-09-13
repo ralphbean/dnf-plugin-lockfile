@@ -42,6 +42,62 @@ class Lockfile(Plugin):
             cli.register_command(LockfileCommand)
 
 
+def _format_simple(package):
+    return f"{package.name}-{package.evr}"
+
+
+def _format_by_rpmurls(package):
+    return package.remote_location()
+
+
+def _format_by_repourls(package):
+    # XXX This doesn't quite work with dnf install
+    result = _format_simple(package)
+
+    if package.reponame in package.base.repos:
+        result = (
+            result
+            + f" --repofrompath={package.repo.id},{package.repo.remote_location('/')}"
+        )
+
+    return result
+
+
+def _format_by_metalinks(package):
+    # XXX This doesn't work, and is just a concept.
+    result = _format_simple(package)
+
+    if package.reponame in package.base.repos:
+        if package.repo.metalink:
+            result = result + f" --metalink={package.repo.metalink}"
+        else:
+            result = result + f" --repoid={package.repo.id}"
+
+    return result
+
+
+def _format_pythonstyle(package):
+    # XXX also, just a concept
+    result = _format_simple(package)
+
+    if package.reponame in package.base.repos:
+        if package.repo.metalink:
+            result = result + f" @ metalink://{package.repo.metalink}"
+        else:
+            result = result + f" @ repoid://{package.repo.id}"
+
+    return result
+
+
+formatters = {
+    "simple": _format_simple,
+    "pythonstyle": _format_pythonstyle,
+    "repourl": _format_by_repourls,
+    "rpmurl": _format_by_rpmurls,
+    "metalink": _format_by_metalinks,
+}
+
+
 class LockfileCommand(commands.Command):
     nevra_forms = {
         "lockfile-n": hawkey.FORM_NAME,
@@ -61,10 +117,10 @@ class LockfileCommand(commands.Command):
             help=_("Location to write the lockfile"),
         )
         parser.add_argument(
-            "--namespaced",
-            action="store_true",
-            default=False,
-            help=_("Add namespace information to each resolved rpm"),
+            "--format",
+            default="simple",
+            choices=sorted(formatters.keys()),
+            help=_("Change formatting of written dependencies"),
         )
         parser.add_argument(
             "package",
@@ -151,7 +207,7 @@ class LockfileCommand(commands.Command):
             self.opts.filenames, strict=strict, progress=self.base.output.progress
         ):
             try:
-                results.append(self._format(pkg))
+                results.append(formatters[self.opts.format](pkg))
             except dnf.exceptions.MarkingError:
                 msg = _("No match for argument: %s")
                 logger.info(msg, self.base.output.term.bold(pkg.location))
@@ -175,20 +231,6 @@ class LockfileCommand(commands.Command):
                 )
             )
 
-    def _format(self, package):
-        # TODO - lots of work to do here to experiment with formats
-        nevr = f"{package.name}-{package.evr}"
-        result = nevr
-
-        if self.opts.namespaced:
-            if package.reponame in package.base.repos:
-                if package.repo.metalink:
-                    result = result + f" @ metalink://{package.repo.metalink}"
-                else:
-                    result = result + f" @ id://{package.repo.id}"
-
-        return result
-
     def _record_packages(self, nevra_forms):
         errors, results = [], []
         for pkg_spec in self.opts.pkg_specs:
@@ -207,7 +249,7 @@ class LockfileCommand(commands.Command):
                 ):
                     found = []
                     for package in packages:
-                        found.append(self._format(package))
+                        found.append(formatters[self.opts.format](package))
                     results.append(sorted(found)[-1])
             except dnf.exceptions.Error as e:
                 msg = "{}: {}".format(e.value, self.base.output.term.bold(pkg_spec))
