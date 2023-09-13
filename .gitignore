@@ -5,3 +5,4 @@ cmake_install.cmake
 plugins/CMakeFiles/
 plugins/Makefile
 plugins/cmake_install.cmake
+rpms.txt
