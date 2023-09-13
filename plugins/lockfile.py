@@ -61,6 +61,12 @@ class LockfileCommand(commands.Command):
             help=_("Location to write the lockfile"),
         )
         parser.add_argument(
+            "--namespaced",
+            action="store_true",
+            default=False,
+            help=_("Add namespace information to each resolved rpm"),
+        )
+        parser.add_argument(
             "package",
             nargs="+",
             metavar=_("PACKAGE"),
@@ -169,15 +175,18 @@ class LockfileCommand(commands.Command):
                 )
             )
 
-    @staticmethod
-    def _format(package):
+    def _format(self, package):
+        # TODO - lots of work to do here to experiment with formats
         nevr = f"{package.name}-{package.evr}"
         result = nevr
-        if package.reponame in package.base.repos:
-            if package.repo.metalink:
-                result = result + f" @ metalink://{package.repo.metalink}"
-            else:
-                result = result + f" @ id://{package.repo.id}"
+
+        if self.opts.namespaced:
+            if package.reponame in package.base.repos:
+                if package.repo.metalink:
+                    result = result + f" @ metalink://{package.repo.metalink}"
+                else:
+                    result = result + f" @ id://{package.repo.id}"
+
         return result
 
     def _record_packages(self, nevra_forms):
