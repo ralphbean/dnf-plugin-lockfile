@@ -117,6 +117,12 @@ class LockfileCommand(commands.Command):
             help=_("Location to write the lockfile"),
         )
         parser.add_argument(
+            "--recursive",
+            default=False,
+            action="store_true",
+            help=_("Include indirect dependencies of the provided packages"),
+        )
+        parser.add_argument(
             "--format",
             default="simple",
             choices=sorted(formatters.keys()),
@@ -247,10 +253,16 @@ class LockfileCommand(commands.Command):
                 for name, packages in (
                     solution["query"].available()._name_dict().items()
                 ):
-                    found = []
-                    for package in packages:
-                        found.append(formatters[self.opts.format](package))
-                    results.append(sorted(found)[-1])
+                    found = sorted(packages, key=lambda p: formatters[self.opts.format](p))[-1]
+
+                    if not self.opts.recursive:
+                        results.append(formatters[self.opts.format](found))
+                    else:
+                        g = hawkey.Goal(self.base.sack)
+                        g.install(found)
+                        if not g.run():
+                            raise dnf.exceptions.Error(f"No way to install deps of {found}")
+                        results.extend([formatters[self.opts.format](p) for p in g.list_installs()])
             except dnf.exceptions.Error as e:
                 msg = "{}: {}".format(e.value, self.base.output.term.bold(pkg_spec))
                 logger.info(msg)
