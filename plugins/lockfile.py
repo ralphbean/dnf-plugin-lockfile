@@ -159,6 +159,8 @@ class LockfileCommand(commands.Command):
 
         self.cli._populate_update_security_filter(self.opts)
 
+        self.base.fill_sack_from_repos_in_cache(False)
+
         skipped_grp_specs = []
         if self.opts.grp_specs:
             if dnf.base.WITH_MODULES:
