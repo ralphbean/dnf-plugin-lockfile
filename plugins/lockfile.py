@@ -47,7 +47,13 @@ def _format_simple(package):
 
 
 def _format_by_rpmurls(package):
-    return package.remote_location()
+    result = package.remote_location()
+    if result:
+        return result
+    if package.location:
+        return os.path.relpath(package.location)
+    # Otherwise, where is this thing?
+    return _format_simple(package)
 
 
 def _format_by_repourls(package):
@@ -117,6 +123,12 @@ class LockfileCommand(commands.Command):
             help=_("Location to write the lockfile"),
         )
         parser.add_argument(
+            "--recursive",
+            default=False,
+            action="store_true",
+            help=_("Include indirect dependencies of the provided packages"),
+        )
+        parser.add_argument(
             "--format",
             default="simple",
             choices=sorted(formatters.keys()),
@@ -152,6 +164,8 @@ class LockfileCommand(commands.Command):
         nevra_forms = self._get_nevra_forms_from_command()
 
         self.cli._populate_update_security_filter(self.opts)
+
+        self.base.fill_sack_from_repos_in_cache(False)
 
         skipped_grp_specs = []
         if self.opts.grp_specs:
@@ -207,7 +221,7 @@ class LockfileCommand(commands.Command):
             self.opts.filenames, strict=strict, progress=self.base.output.progress
         ):
             try:
-                results.append(formatters[self.opts.format](pkg))
+                results.extend(self._expand(pkg))
             except dnf.exceptions.MarkingError:
                 msg = _("No match for argument: %s")
                 logger.info(msg, self.base.output.term.bold(pkg.location))
@@ -244,13 +258,11 @@ class LockfileCommand(commands.Command):
                     self.base._raise_package_not_found_error(
                         pkg_spec, forms=nevra_forms, reponame=None
                     )
-                for name, packages in (
-                    solution["query"].available()._name_dict().items()
-                ):
-                    found = []
-                    for package in packages:
-                        found.append(formatters[self.opts.format](package))
-                    results.append(sorted(found)[-1])
+                for packages in solution["query"].available()._name_dict().values():
+                    found = sorted(
+                        packages, key=lambda p: formatters[self.opts.format](p)
+                    )[-1]
+                    results.extend(self._expand(found))
             except dnf.exceptions.Error as e:
                 msg = "{}: {}".format(e.value, self.base.output.term.bold(pkg_spec))
                 logger.info(msg)
@@ -259,3 +271,13 @@ class LockfileCommand(commands.Command):
                 errors.append(pkg_spec)
 
         return errors, results
+
+    def _expand(self, package):
+        if not self.opts.recursive:
+            return [formatters[self.opts.format](package)]
+        else:
+            g = hawkey.Goal(self.base.sack)
+            g.install(package)
+            if not g.run():
+                raise dnf.exceptions.Error(f"No way to install deps of {package}")
+            return [formatters[self.opts.format](p) for p in g.list_installs()]
