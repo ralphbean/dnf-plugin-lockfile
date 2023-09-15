@@ -21,6 +21,22 @@ nethack-3.6.7-1.fc38
 ```
 
 ```bash
+# Include all dependencies
+❯ dnf lockfile nethack --recursive
+Wrote 193 packages to /home/threebean/devel/dnf-plugin-lockfile/rpms.txt
+❯ head rpms.txt
+alternatives-1.25-1.fc38
+audit-libs-3.1.2-1.fc38
+authselect-1.4.2-2.fc38
+authselect-libs-1.4.2-2.fc38
+basesystem-11-15.fc38
+bash-5.2.15-3.fc38
+...
+nethack-3.6.7-1.fc38
+...
+```
+
+```bash
 # Pin rpms to exactly where they came from. Super precise, but not relocatable
 ❯ dnf lockfile --format rpmurl nethack
 ❯ cat rpms.txt
