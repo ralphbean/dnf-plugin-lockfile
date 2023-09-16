@@ -262,9 +262,7 @@ class LockfileCommand(commands.Command):
                         pkg_spec, forms=nevra_forms, reponame=None
                     )
                 for packages in solution["query"].available()._name_dict().values():
-                    found = sorted(
-                        packages, key=lambda p: formatters[self.opts.format](p)
-                    )[-1]
+                    found = sorted(packages)[-1]
                     results.extend(self._expand(found))
             except dnf.exceptions.Error as e:
                 msg = "{}: {}".format(e.value, self.base.output.term.bold(pkg_spec))
