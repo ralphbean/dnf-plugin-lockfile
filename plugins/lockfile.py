@@ -199,6 +199,9 @@ class LockfileCommand(commands.Command):
                 packages=error_pkgs,
             )
 
+        # Remove any duplicates
+        results = set(results)
+
         with open(self.opts.lockfile, "w") as f:
             f.write("\n".join(sorted(results)))
         logger.info(f"Wrote {len(results)} packages to {self.opts.lockfile}")
