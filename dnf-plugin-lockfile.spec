@@ -4,7 +4,7 @@ This plug-in generates lockfiles provided on the commandline.}
 
 Name:           dnf-plugin-%{srcname}
 Version:        1.0
-Release:        %autorelease
+Release:        1
 Summary:        DNF plugin for Performance Metrics
 License:        GPLv2
 BuildArch:      noarch
