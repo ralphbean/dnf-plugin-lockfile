@@ -1,0 +1,14 @@
+FROM fedora:38 as nethack-build
+# This is an example Dockerfile showing how to install dependencies into an empty installroot such
+# that nothing conflicts with anything surprising coming from a base image.
+
+COPY rpms-nethack.txt .
+
+RUN mkdir -p /mnt/rootfs
+RUN yum install --installroot /mnt/rootfs $(cat rpms-nethack.txt) --releasever 38 --setopt install_weak_deps=false --nodocs -y && yum --installroot /mnt/rootfs clean all
+RUN rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.* /mnt/rootfs/usr/share/zoneinfo
+
+FROM scratch
+
+COPY --from=nethack-build /mnt/rootfs/ /
+CMD /bin/sh
