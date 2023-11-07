@@ -1,6 +1,46 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "github>platform-engineering-org/.github"
-  ]
+    "github>platform-engineering-org/.github",
+    ":gitSignOff"
+  ],
+  "enabledManagers": [
+    "regex",
+    "github-actions"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "devfile.*y[a]?ml$"
+      ],
+      "matchStrings": [
+        "image: (?<depName>\\S*):(?<currentValue>\\S*)"
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "{{{depName}}}"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "github actions",
+      "groupSlug": "github-actions",
+      "commitMessageTopic": "{{depName}}"
+    }
+  ],
+  "ignorePaths": [
+    "**/docker/**",
+    ".ci/**",
+    "tests/**",
+    "stacks/java-openliberty/**",
+    "stacks/java-openliberty-gradle/**",
+    "stacks/java-websphereliberty/**",
+    "stacks/java-websphereliberty-gradle/**",
+    "stacks/nodejs/**"
+  ],
+  "prHourlyLimit": 20,
+  "prConcurrentLimit": 5
 }
