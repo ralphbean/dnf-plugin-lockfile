@@ -1,4 +1,4 @@
-FROM fedora:38 as nethack-build
+FROM fedora:41@sha256:eb37f58646a901dc7727cf448cae36daaefaba79de33b5058dab79aa4c04aefb as nethack-build
 # This is an example Dockerfile showing how to install dependencies into an empty installroot such
 # that nothing conflicts with anything surprising coming from a base image.
 
